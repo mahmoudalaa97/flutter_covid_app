@@ -1,12 +1,21 @@
+import 'package:covid21/core/utils/date_format_helper.dart';
 import 'package:covid21/core/utils/size_responsive.dart';
+import 'package:covid21/logic/cubit/covid_controller_cubit.dart';
+import 'package:covid21/logic/model/covid_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_conditional_rendering/conditional.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    CovidControllerCubit covidController =
+        context.watch<CovidControllerCubit>();
+    List<CovidModel>? covidModel = covidController.covidModel;
     Size size = MediaQuery.of(context).size;
+    print("Build");
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -50,13 +59,21 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        "274404",
-                        style: textStyle(
-                            fontSize: size.width * s40,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900),
+                      Conditional.single(
+                        context: context,
+                        conditionBuilder: (context) =>
+                        covidModel != null,
+                        widgetBuilder: (context) =>   Text(
+                          "${context.watch<CovidControllerCubit>().covidModel?.last.confirmed ?? ""}",
+                          style: textStyle(
+                              fontSize: size.width * s40,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900),
+                        ),
+                        fallbackBuilder: (context) =>
+                            CircularProgressIndicator(),
                       ),
+
                       Text(
                         "Total Cases",
                         style: textStyle(
@@ -109,12 +126,18 @@ class HomeScreen extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              Text(
-                                "2021/6/1",
-                                style: textStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              Conditional.single(
+                                context: context,
+                                conditionBuilder: (context) =>
+                                    covidModel != null,
+                                widgetBuilder: (context) => Text(
+                                    "${DateFormatHelper.getDateFormat(covidModel?.last.date)}",
+                                    style: textStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    )),
+                                fallbackBuilder: (context) =>
+                                    CircularProgressIndicator(),
                               )
                             ],
                           )),
@@ -128,18 +151,18 @@ class HomeScreen extends StatelessWidget {
                           context,
                           title: "Recovered",
                           colorTitle: Colors.green.shade600,
-                          data: "202650",
+                          data: covidModel?.last.recovered.toString()??null,
                         ),
                         buildExpandedItem(context,
                             title: "Active",
                             colorTitle: Colors.amber.shade600,
-                            data: "56063",
+                            data: covidModel?.last.active.toString()??null,
                             colorData: Colors.black),
                         buildExpandedItem(
                           context,
                           title: "Deaths",
                           colorTitle: Colors.red.shade600,
-                          data: "15691",
+                          data: covidModel?.last.deaths.toString()??null,
                         ),
                       ],
                     ),
@@ -185,11 +208,15 @@ class HomeScreen extends StatelessWidget {
             SizedBox(
               height: 15,
             ),
-            Text(
-              "$data",
-              style: textStyle(
-                  fontSize: 16, color: colorData, fontWeight: FontWeight.w900),
-            )
+            Conditional.single(context: context,
+                conditionBuilder: (context) => data!=null,
+                widgetBuilder: (context) =>   Text(
+                  "$data",
+                  style: textStyle(
+                      fontSize: 16, color: colorData, fontWeight: FontWeight.w900),
+                ),
+                fallbackBuilder: (context) => CircularProgressIndicator(),)
+
           ],
         ),
       ),
